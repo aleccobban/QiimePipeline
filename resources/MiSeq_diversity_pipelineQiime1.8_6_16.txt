@@ -1,0 +1,50 @@
+# upack the file from the sequencing center by moving the folder with the files into the virtual machine (QIIME_shared folder) and then navigate into the folder with the bz2 file and typing tar -vxjf filename.tar.bz2
+#Quality trimming query1 and query2 are your forward and reverse reads
+#note that you have to provide the path for not only trim galore but also for your forward and reverse read files that may not be in the 
+#same directory as you are working. You also have to establish a new folder for the output in the directory where you are working or give it 
+#the path to this new folder. See the example below
+
+#be sure you are in Qiime_shared folder
+# qiime@qiime-VirtualBox:~/Desktop/Shared_Folder/QIIME_shared/edgecome_test_set$ perl '/home/qiime/Desktop/Shared_Folder/QIIME_shared/trim_galore'  '/home/qiime/Desktop/Shared_Folder/QIIME_shared/edgecome_test_set/fastq_files/Test1_10K_R1.fastq' '/home/qiime/Desktop/Shared_Folder/QIIME_shared/edgecome_test_set/fastq_files/Test1_10K_R2.fastq'  --paired --retain_unpaired -r1 100 -r2 100 -q 25 -o '/home/qiime/Desktop/Shared_Folder/QIIME_shared/edgecome_test_set/trimGoutput' 
+perl trim_galore query1 query2 --paired --retain_unpaired -r1 100 -r2 100 -q 25 -o outdirectory 
+
+#navigate to inside FLASH directory -- this merges the reads
+#you need to put in the path to the output from Trim_galore and you need to establish an output directory which is best to be
+#located outside of the FLASH directory
+#-r represents read length required, -f minimal length of total fragment, -s standard dev which has to be about 10% of f
+./flash ../Trim/Test1_10K_R1_val_1.fq ../Trim/Test1_10K_R2_val_2.fq -r 150 -f 180 -s 18 -d <outputdirectory> -o <outputfile> 
+
+#convert fastq to fasta. You have to point to where the script is if you use the script, otherwise type code below.  
+#/ code below places file in the current directory, so cd to desired output directory
+cat file_in.fastq | perl -e '$i=0;while(<>){if(/^\@/&&$i==0){s/^\@/\>/;print;}elsif($i==1){print;$i=-3}$i++;}' > file_out.fasta
+
+
+
+#convert the files to look as if they are demultiplexed by QIIME use a sample ID that makes sense for the output-avoid spaces
+#point the command to where the script is. Example is below
+# TestID = library name (unique)
+#qiime@qiime-VirtualBox:~/Desktop/Shared_Folder/QIIME_shared/FLASH-1.2.9/flashtestout$ perl '/home/qiime/Desktop/Shared_Folder/QIIME_shared/edgecome_test_set/prepare_qiime_input_fasta.pl' testID '/home/qiime/Desktop/Shared_Folder/QIIME_shared/FLASH-1.2.9/flashtestout/test_out.fasta' > testQIIME.fa
+perl prepare_qiime_input_fasta.pl sampleID Filename.fa > New_filename.fa
+
+#concatenate all edited samples files into a single input file
+cat file1 file2 > final_input_file.fasta
+
+###### start QIIME ########
+qiime
+
+#make clusters
+pick_otus.py -i final_input_file.fasta
+#seqs.fna is the last file created in the FLASH folder New_filename.fa 
+ pick_rep_set.py -i uclust_picked_otus/seqs_otus.txt -f seqs.fna -m most_abundant
+
+#assign taxonomy to the representative OTUs  note to change Silva to 119 
+#input file is the output from the last step, and point the script to Silva_119 at the 97% level. The taxo map is found in the same folder for 11974
+assign_taxonomy.py -i seqs.fna_rep_set.fasta -r */97_Silva_111_rep_set.fasta -t *99_Silva_111_taxa_map_RDP_6_levels.txt -m blast
+
+#make table
+# seqs.fna_rep_set_tax_assignments.txt is the output from the previous step, and is found in that folder. The seqs_otus.txt file is found in the uclust output folder
+
+make_otu_table.py -i uclust_picked_otus/seqs_otus.txt -t rdp_assigned_taxonomy/seqs.fna_rep_set_tax_assignments.txt -o kkdhab_b.biom
+
+#convert to txt
+biom convert -i kkdhab_b.biom -o kkdhab_b_otu.txt -b --header-key taxonomy

@@ -1,0 +1,25 @@
+Overview
+This program executes trim_galore FLASH, 
+translation of fastq into fasta files, makes 
+the files appear demultiplexed by QIIME before 
+concatenating for QIIME. 
+
+Warning: This program performs the processes described above on all R1.fastq and R2.fastq files
+in a folder. It is possible that the output from these files will be very large
+This program does not delete intermediate files. If file size is an issue please clean some space
+in your hard drive and delete intermediate files after running.
+
+**To use this program it is necessary to have cutadapt and FLASH installed and 
+**in the $PATH
+**Refer to each programs' installation guide for information on how to install
+**To add a file to the PATH edit ~/.bashrc and add the line 
+**export PATH=$PATH:/path/to/directory/containing_program
+**to the end of the file
+
+USER INPUT
+User input is required in two places. The first time user input is required, it will be to select the folder containing the
+ R1 and R2 fastq reads. Select that folder and press open to confirm. Reads must be available in such a way that their filenames are
+ 
+ unique_nameR1.fastq and unique_nameR2.fastq to allow the program to match the reads and run them through the rest of the process.
+ 
+ Finally after trimming and FLASHing it will become necessary to make sure that the names you give reads are usable
